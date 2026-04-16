@@ -65,7 +65,7 @@ if page == "City Overview":
     col1, col2, col3 = st.columns(3)
     total_records = len(df)
     avg_score = df['score'].mean() if 'score' in df else 0
-    critical_rate = (df['critical_flag'] == 'Y').mean() if 'critical_flag' in df else 0
+    critical_rate = (df['critical_flag'] == 'YE').mean() if 'critical_flag' in df else 0
     total_inspections = df_filtered.shape[0]
     a_grade_percentage = (df_filtered[df_filtered['grade'] == 'A'].shape[0] / total_inspections) * 100 if total_inspections > 0 else 0
     col1.metric("Total Inspections", f"{total_inspections:,}")
