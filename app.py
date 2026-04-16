@@ -65,7 +65,7 @@ if page == "City Overview":
     col1, col2, col3 = st.columns(3)
     total_records = len(df)
     avg_score = df['score'].mean() if 'score' in df else 0
-    critical_rate = (df['critical_flag'] == 'YE').mean() if 'critical_flag' in df else 0
+    critical_rate = (df['critical_flag'] == 'Y').mean() if 'critical_flag' in df else 0
     total_inspections = df_filtered.shape[0]
     a_grade_percentage = (df_filtered[df_filtered['grade'] == 'A'].shape[0] / total_inspections) * 100 if total_inspections > 0 else 0
     col1.metric("Total Inspections", f"{total_inspections:,}")
@@ -97,7 +97,7 @@ if page == "City Overview":
     with col_right:
         st.subheader("Score Trend Over Years")
         if 'year' in df and 'score' in df:
-            time_data = df_filtered.set_index('inspection_date').resample('Y')['score'].mean().reset_index()
+            time_data = df_filtered.set_index('inspection_date').resample('YE')['score'].mean().reset_index()
             time_data['inspection_date'] = time_data['inspection_date'].dt.year # 只显示年份
             fig_time = px.line(time_data, x='inspection_date', y='score', title="Yearly Average Health Score Trend", markers=True)
             fig_time.update_xaxes(title_text='Year')
