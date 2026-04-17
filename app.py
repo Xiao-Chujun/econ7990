@@ -184,28 +184,6 @@ elif page == "Violation Deep Dive":
 
 # ------------------- PAGE 3: CLOSURE RISK PREDICTION -------------------
 elif page == "Closure Risk Prediction":
-<<<<<<< HEAD
-    st.title("🔮 Predictive Analytics: Restaurant Closure Risk")
-    st.markdown("Using a **LightGBM Classifier** to estimate closure probability.")
-
-    if model is None:
-        st.error("Model package not found. Please check if 'restaurant_closure_model2_fixed.pkl' exists in your repository.")
-    else:
-        # --- 核心修复点：从字典中提取真正的模型和特征名 ---
-        # 如果你保存时用了字典打包，这里需要解包
-        if isinstance(model, dict):
-            actual_model = model.get('model')
-            model_features = model.get('features')
-        else:
-            # 如果加载出来直接就是模型对象
-            actual_model = model
-            try:
-                model_features = actual_model.feature_name()
-            except:
-                model_features = ['critical_cnt', 'score_last', 'inspection_freq', 'median_income', 
-                                  'boro_Manhattan', 'boro_Brooklyn', 'boro_Queens', 'boro_Bronx', 'boro_Staten Island']
-                
-=======
     st.title("🔮 Restaurant Closure Risk Prediction")
     st.markdown("Using a **Random Forest model** trained on inspection history and socio‑economic data to estimate the risk of closure within the next year.")
 
@@ -219,7 +197,6 @@ elif page == "Closure Risk Prediction":
             st.error("Model does not contain `feature_names_in_`. Ensure it was trained with a DataFrame.")
             st.stop()
 
->>>>>>> parent of 1b5dfae (LGBM)
         with st.form("prediction_form"):
             st.subheader("Enter Restaurant Characteristics")
             col1, col2 = st.columns(2)
@@ -238,18 +215,11 @@ elif page == "Closure Risk Prediction":
             submit = st.form_submit_button("Run Risk Assessment")
 
         if submit:
-<<<<<<< HEAD
-            # 【修复点 2】使用定义的 model_features 创建矩阵
-            input_df = pd.DataFrame(np.zeros((1, len(model_features))), columns=model_features)
-            
-            mapping = {
-=======
             # Create input dataframe with all zeros, then fill known values
             input_df = pd.DataFrame(np.zeros((1, len(model_features))), columns=model_features)
 
             # Fill numeric features (adjust column names as needed)
             numeric_mapping = {
->>>>>>> parent of 1b5dfae (LGBM)
                 'critical_cnt': critical_cnt,
                 'score_last': score_last,
                 'inspection_freq': inspection_freq,
@@ -263,29 +233,6 @@ elif page == "Closure Risk Prediction":
                     input_df[col] = 1 if col == f'boro_{boro_choice}' else 0
                 # Other features (e.g., time‑based) remain 0 – adjust if your model expects them
 
-<<<<<<< HEAD
-            # 处理 Boro One-hot
-            boro_col = f"boro_{boro_choice}"
-            if boro_col in input_df.columns:
-                input_df[boro_col] = 1
-            
-            # 执行预测
-            try:
-                risk_probability = actual_model.predict_proba(input_df)[0][1]
-                
-                st.markdown("---")
-                st.subheader(f"Results: {risk_probability:.1%} Closure Probability")
-                
-                # 进度条展示风险程度
-                st.progress(risk_probability)
-                
-                if risk_probability > 0.325:
-                    st.error("🚨 **High Risk Profile**")
-                else:
-                    st.success("✅ **Stable Profile**")
-            except Exception as e:
-                st.error(f"Prediction Error: {e}")
-=======
             # Predict probability of closure (assuming positive class = closure)
             prob = model.predict_proba(input_df)[0, 1]
             st.subheader("Risk Assessment Result")
@@ -303,6 +250,5 @@ elif page == "Closure Risk Prediction":
                         'importance': model.feature_importances_
                     }).sort_values('importance', ascending=False).head(10)
                     st.dataframe(importances)
->>>>>>> parent of 1b5dfae (LGBM)
 
 # ------------------- END -------------------
