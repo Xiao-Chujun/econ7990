@@ -20,7 +20,7 @@ def load_data():
 
 @st.cache_resource
 def load_model():
-    model_path = 'restaurant_closure_model2_fixed.pkl'
+    model_path = 'restaurant_closure_model_fixed.pkl'
     if os.path.exists(model_path):
         return joblib.load(model_path)
     return None
@@ -184,6 +184,7 @@ elif page == "Violation Deep Dive":
 
 # ------------------- PAGE 3: CLOSURE RISK PREDICTION -------------------
 elif page == "Closure Risk Prediction":
+<<<<<<< HEAD
     st.title("🔮 Predictive Analytics: Restaurant Closure Risk")
     st.markdown("Using a **LightGBM Classifier** to estimate closure probability.")
 
@@ -204,35 +205,65 @@ elif page == "Closure Risk Prediction":
                 model_features = ['critical_cnt', 'score_last', 'inspection_freq', 'median_income', 
                                   'boro_Manhattan', 'boro_Brooklyn', 'boro_Queens', 'boro_Bronx', 'boro_Staten Island']
                 
+=======
+    st.title("🔮 Restaurant Closure Risk Prediction")
+    st.markdown("Using a **Random Forest model** trained on inspection history and socio‑economic data to estimate the risk of closure within the next year.")
+
+    if model is None:
+        st.error("❌ Model file `restaurant_closure_model_fixed.pkl` not found. Please place it in the current directory.")
+    else:
+        # Get expected feature names from the model
+        try:
+            model_features = model.feature_names_in_
+        except AttributeError:
+            st.error("Model does not contain `feature_names_in_`. Ensure it was trained with a DataFrame.")
+            st.stop()
+
+>>>>>>> parent of 1b5dfae (LGBM)
         with st.form("prediction_form"):
-            st.subheader("Restaurant Profile Input")
+            st.subheader("Enter Restaurant Characteristics")
             col1, col2 = st.columns(2)
+
             with col1:
-                critical_cnt = st.number_input("Recent Critical Violations", 0, 50, 2)
-                score_last = st.number_input("Last Inspection Score", 0, 150, 12)
-                inspection_freq = st.slider("Inspections Per Year", 0.0, 10.0, 1.5)
-            
+                critical_cnt = st.number_input("Recent critical violations", 0, 50, 2)
+                score_last = st.number_input("Last inspection score", 0, 150, 12)
+                inspection_freq = st.slider("Annual inspection frequency", 0.0, 10.0, 1.5)
+
             with col2:
-                boro_choice = st.selectbox("Borough", ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"])
-                median_income = st.number_input("Neighborhood Median Income ($)", 10000, 250000, 75000)
-            
+                # Borough must match the one‑hot encoded columns in the model
+                boro_options = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]
+                boro_choice = st.selectbox("Borough", boro_options)
+                median_income = st.number_input("Census tract median income ($)", 20000, 250000, 75000)
+
             submit = st.form_submit_button("Run Risk Assessment")
 
         if submit:
+<<<<<<< HEAD
             # 【修复点 2】使用定义的 model_features 创建矩阵
             input_df = pd.DataFrame(np.zeros((1, len(model_features))), columns=model_features)
             
             mapping = {
+=======
+            # Create input dataframe with all zeros, then fill known values
+            input_df = pd.DataFrame(np.zeros((1, len(model_features))), columns=model_features)
+
+            # Fill numeric features (adjust column names as needed)
+            numeric_mapping = {
+>>>>>>> parent of 1b5dfae (LGBM)
                 'critical_cnt': critical_cnt,
                 'score_last': score_last,
                 'inspection_freq': inspection_freq,
-                'median_income': median_income
+                'median_income': median_income,
             }
-            
-            for col, val in mapping.items():
-                if col in input_df.columns:
-                    input_df[col] = val
+            for col in input_df.columns:
+                if col in numeric_mapping:
+                    input_df[col] = numeric_mapping[col]
+                elif col.startswith('boro_'):
+                    # One‑hot encode borough
+                    input_df[col] = 1 if col == f'boro_{boro_choice}' else 0
+                # Other features (e.g., time‑based) remain 0 – adjust if your model expects them
 
+<<<<<<< HEAD
             # 处理 Boro One-hot
             boro_col = f"boro_{boro_choice}"
             if boro_col in input_df.columns:
@@ -254,5 +285,24 @@ elif page == "Closure Risk Prediction":
                     st.success("✅ **Stable Profile**")
             except Exception as e:
                 st.error(f"Prediction Error: {e}")
+=======
+            # Predict probability of closure (assuming positive class = closure)
+            prob = model.predict_proba(input_df)[0, 1]
+            st.subheader("Risk Assessment Result")
+            st.metric("Predicted Closure Probability", f"{prob:.1%}")
+            if prob >= 0.5:
+                st.error("⚠️ High risk: The restaurant is likely to close within the next year.")
+            else:
+                st.success("✅ Low risk: The restaurant appears financially and operationally stable.")
+
+            # Optional: display feature importance for transparency (if model is a random forest)
+            if hasattr(model, 'feature_importances_'):
+                with st.expander("Model feature importances (top 10)"):
+                    importances = pd.DataFrame({
+                        'feature': model_features,
+                        'importance': model.feature_importances_
+                    }).sort_values('importance', ascending=False).head(10)
+                    st.dataframe(importances)
+>>>>>>> parent of 1b5dfae (LGBM)
 
 # ------------------- END -------------------
