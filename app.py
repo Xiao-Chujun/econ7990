@@ -20,7 +20,7 @@ def load_data():
 
 @st.cache_resource
 def load_model():
-    model_path = 'restaurant_closure_model_fixed.pkl'
+    model_path = 'restaurant_closure_model2_fixed.pkl'
     if os.path.exists(model_path):
         return joblib.load(model_path)
     return None
@@ -183,72 +183,68 @@ elif page == "Violation Deep Dive":
         st.dataframe(df[['inspection_date', 'boro', 'cuisine_clean', 'violation_topic_name', 'score']].head(100))
 
 # ------------------- PAGE 3: CLOSURE RISK PREDICTION -------------------
-elif page == "Closure Risk Prediction":
-    st.title("🔮 Restaurant Closure Risk Prediction")
-    st.markdown("Using a **Random Forest model** trained on inspection history and socio‑economic data to estimate the risk of closure within the next year.")
+elif page == "Closure Risk Predictor":
+    st.title("🔮 Predictive Analytics: Restaurant Closure Risk")
+    st.markdown("Using a **LightGBM Classifier** to estimate closure probability based on inspection history.")
 
     if model is None:
-        st.error("❌ Model file `restaurant_closure_model_fixed.pkl` not found. Please place it in the current directory.")
+        st.error("Model package not found. Please ensure .pkl file is in the root directory.")
     else:
-        # Get expected feature names from the model
-        try:
-            model_features = model.feature_names_in_
-        except AttributeError:
-            st.error("Model does not contain `feature_names_in_`. Ensure it was trained with a DataFrame.")
-            st.stop()
+        model = model['model']
+        model_features = model['features']
 
         with st.form("prediction_form"):
-            st.subheader("Enter Restaurant Characteristics")
+            st.subheader("Restaurant Profile Input")
             col1, col2 = st.columns(2)
-
             with col1:
-                critical_cnt = st.number_input("Recent critical violations", 0, 50, 2)
-                score_last = st.number_input("Last inspection score", 0, 150, 12)
-                inspection_freq = st.slider("Annual inspection frequency", 0.0, 10.0, 1.5)
-
+                critical_cnt = st.number_input("Recent Critical Violations", 0, 50, 2)
+                score_last = st.number_input("Last Inspection Score", 0, 150, 12)
+                inspection_freq = st.slider("Inspections Per Year", 0.0, 10.0, 1.5)
+            
             with col2:
-                # Borough must match the one‑hot encoded columns in the model
-                boro_options = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]
-                boro_choice = st.selectbox("Borough", boro_options)
-                median_income = st.number_input("Census tract median income ($)", 20000, 250000, 75000)
-
+                boro_choice = st.selectbox("Borough", ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"])
+                median_income = st.number_input("Neighborhood Median Income ($)", 10000, 250000, 75000)
+            
             submit = st.form_submit_button("Run Risk Assessment")
 
         if submit:
-            # Create input dataframe with all zeros, then fill known values
+            # Construct Input DataFrame
             input_df = pd.DataFrame(np.zeros((1, len(model_features))), columns=model_features)
-
-            # Fill numeric features (adjust column names as needed)
-            numeric_mapping = {
+            
+            # Map Inputs
+            mapping = {
                 'critical_cnt': critical_cnt,
                 'score_last': score_last,
                 'inspection_freq': inspection_freq,
-                'median_income': median_income,
+                'median_income': median_income
             }
-            for col in input_df.columns:
-                if col in numeric_mapping:
-                    input_df[col] = numeric_mapping[col]
-                elif col.startswith('boro_'):
-                    # One‑hot encode borough
-                    input_df[col] = 1 if col == f'boro_{boro_choice}' else 0
-                # Other features (e.g., time‑based) remain 0 – adjust if your model expects them
+            
+            for col, val in mapping.items():
+                if col in input_df.columns:
+                    input_df[col] = val
 
-            # Predict probability of closure (assuming positive class = closure)
-            prob = model.predict_proba(input_df)[0, 1]
-            st.subheader("Risk Assessment Result")
-            st.metric("Predicted Closure Probability", f"{prob:.1%}")
-            if prob >= 0.5:
-                st.error("⚠️ High risk: The restaurant is likely to close within the next year.")
+            # Borough One-Hot Encoding
+            boro_col = f"boro_{boro_choice}"
+            if boro_col in input_df.columns:
+                input_df[boro_col] = 1
+            
+            # Prediction
+            risk_probability = model.predict_proba(input_df)[0][1]
+            
+            st.markdown("---")
+            st.subheader(f"Results: {risk_probability:.1%} Closure Probability")
+            
+            # Using your threshold of ~0.325 from rf.ipynb
+            if risk_probability > 0.325:
+                st.error("🚨 **High Risk Profile**")
+                st.info("Recommendation: Targeted intervention or management training suggested.")
             else:
-                st.success("✅ Low risk: The restaurant appears financially and operationally stable.")
+                st.success("✅ **Stable Profile**")
+                st.info("Observation: This restaurant shows lower risk relative to historical closure patterns.")
 
-            # Optional: display feature importance for transparency (if model is a random forest)
-            if hasattr(model, 'feature_importances_'):
-                with st.expander("Model feature importances (top 10)"):
-                    importances = pd.DataFrame({
-                        'feature': model_features,
-                        'importance': model.feature_importances_
-                    }).sort_values('importance', ascending=False).head(10)
-                    st.dataframe(importances)
+# Footer
+st.sidebar.markdown("---")
+st.sidebar.caption("ECON7990 Group Project | Smart City Analytics")
+st.sidebar.caption("Powered by Streamlit, LightGBM & Plotly")
 
 # ------------------- END -------------------
