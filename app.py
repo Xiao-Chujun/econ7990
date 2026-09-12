@@ -81,12 +81,12 @@ if page == "City Overview":
         st.subheader("Restaurant Geographic Distribution")
         if 'latitude' in df and 'longitude' in df:
             sample_df = df.sample(n=min(3000, total_records))
-            fig_map = px.scatter_mapbox(
+            fig_map = px.scatter_map(
                 sample_df, lat="latitude", lon="longitude",
                 color="boro" if 'boro' in df else None,
                 hover_name="dba" if 'dba' in df else None,
                 zoom=10, center={"lat": 40.7128, "lon": -74.0060},
-                mapbox_style="carto-positron",
+                map_style="carto-positron",
                 title="Restaurants by Borough (sampled)"
             )
             fig_map.update_layout(margin={"r":0,"t":40,"l":0,"b":0})
